@@ -63,7 +63,7 @@
         </where>
     </select>
 
-    <update id="forceDelete">
-        UPDATE t_comment SET status = 0 WHERE comment_id = #{commentId}
-    </update>
+    <delete id="forceDelete">
+        DELETE FROM t_comment WHERE comment_id = #{commentId}
+    </delete>
 </mapper>

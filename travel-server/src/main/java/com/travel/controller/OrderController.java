@@ -57,10 +57,16 @@ public class OrderController {
         return ApiResponse.success("抢购成功", data);
     }
 
-    /** 订单详情 */
+    /** 订单详情（仅允许查看自己的订单） */
     @GetMapping("/detail/{orderId}")
-    public ApiResponse<Map<String, Object>> detail(@PathVariable String orderId) {
+    public ApiResponse<Map<String, Object>> detail(@PathVariable String orderId,
+                                                    HttpServletRequest request) {
+        Integer userId = (Integer) request.getAttribute("userId");
         Order order = orderService.getOrder(orderId);
+        // 校验订单归属，防止越权查看他人订单
+        if (!order.getUserId().equals(userId)) {
+            return ApiResponse.error(403, "无权查看此订单");
+        }
         List<OrderItem> items = orderService.getOrderItems(orderId);
         Map<String, Object> data = new HashMap<>();
         data.put("order", order);

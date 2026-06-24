@@ -3,6 +3,7 @@ package com.travel.controller;
 import com.travel.dto.ApiResponse;
 import com.travel.dto.PageRequest;
 import com.travel.entity.Scenic;
+import com.travel.exception.BusinessException;
 import com.travel.service.ScenicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,27 @@ public class ScenicController {
 
     @Autowired
     private ScenicService scenicService;
+
+    /** limit 参数安全上限 */
+    private static final int MAX_LIMIT = 100;
+    /** 经纬度有效范围 */
+    private static final BigDecimal LNG_MIN = new BigDecimal("-180");
+    private static final BigDecimal LNG_MAX = new BigDecimal("180");
+    private static final BigDecimal LAT_MIN = new BigDecimal("-90");
+    private static final BigDecimal LAT_MAX = new BigDecimal("90");
+
+    private int safeLimit(int limit) {
+        return Math.min(MAX_LIMIT, Math.max(1, limit));
+    }
+
+    private void validateCoord(BigDecimal lng, BigDecimal lat) {
+        if (lng.compareTo(LNG_MIN) < 0 || lng.compareTo(LNG_MAX) > 0) {
+            throw new BusinessException(400, "经度范围-180~180");
+        }
+        if (lat.compareTo(LAT_MIN) < 0 || lat.compareTo(LAT_MAX) > 0) {
+            throw new BusinessException(400, "纬度范围-90~90");
+        }
+    }
 
     /** 景点详情 */
     @GetMapping("/detail/{id}")
@@ -33,7 +55,7 @@ public class ScenicController {
     @GetMapping("/hot")
     public ApiResponse<List<Scenic>> hot(@RequestParam(required = false) String city,
                                           @RequestParam(defaultValue = "10") int limit) {
-        return ApiResponse.success(scenicService.listHot(city, limit));
+        return ApiResponse.success(scenicService.listHot(city, safeLimit(limit)));
     }
 
     /** 搜索（分页） */
@@ -55,8 +77,7 @@ public class ScenicController {
                                                 @RequestParam(defaultValue = "10") int limit,
                                                 javax.servlet.http.HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
-        // 未登录或 userId 为 null 时，回退到热门推荐
-        return ApiResponse.success(scenicService.recommend(userId, city, limit));
+        return ApiResponse.success(scenicService.recommend(userId, city, safeLimit(limit)));
     }
 
     /** 附近景点 */
@@ -64,6 +85,7 @@ public class ScenicController {
     public ApiResponse<List<Scenic>> nearby(@RequestParam BigDecimal lng,
                                              @RequestParam BigDecimal lat,
                                              @RequestParam(defaultValue = "8") int limit) {
-        return ApiResponse.success(scenicService.nearby(lng, lat, limit));
+        validateCoord(lng, lat);
+        return ApiResponse.success(scenicService.nearby(lng, lat, safeLimit(limit)));
     }
 }

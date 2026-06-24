@@ -121,7 +121,6 @@
             <if test="coverImage != null">cover_image = #{coverImage},</if>
             <if test="images != null">images = #{images},</if>
             <if test="tags != null">tags = #{tags},</if>
-            <if test="status != null">status = #{status},</if>
         </set>
         WHERE scenic_id = #{scenicId}
     </update>

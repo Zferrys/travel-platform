@@ -24,7 +24,6 @@ export default createStore({
       state.user = null
       sessionStorage.removeItem('token')
       sessionStorage.removeItem('user')
-      sessionStorage.removeItem('csrfToken')
     }
   },
   actions: {

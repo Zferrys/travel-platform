@@ -70,15 +70,19 @@ public class TravelNoteController {
 
     /** 点赞 */
     @PostMapping("/like/{id}")
-    public ApiResponse<?> like(@PathVariable("id") Integer id) {
-        travelNoteService.like(id);
+    public ApiResponse<?> like(@PathVariable("id") Integer id, HttpServletRequest request) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        if (userId == null) return ApiResponse.error(401, "请先登录");
+        travelNoteService.like(id, userId);
         return ApiResponse.success();
     }
 
     /** 取消点赞 */
     @PostMapping("/unlike/{id}")
-    public ApiResponse<?> unlike(@PathVariable("id") Integer id) {
-        travelNoteService.unlike(id);
+    public ApiResponse<?> unlike(@PathVariable("id") Integer id, HttpServletRequest request) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        if (userId == null) return ApiResponse.error(401, "请先登录");
+        travelNoteService.unlike(id, userId);
         return ApiResponse.success();
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +35,10 @@ public class OrderService {
     @Autowired private HotelMapper hotelMapper;
 
     private static final int MAX_NAME_LEN = 30;
-    private static final int MAX_PHONE_LEN = 20;
+    /** 中国大陆手机号正则 */
+    private static final String PHONE_REGEX = "1[3-9]\\d{9}";
+    /** 秒杀日期最大提前天数 */
+    private static final int MAX_ADVANCE_DAYS = 30;
 
     /** 本地防重标记 */
     private final Map<String, Boolean> seckillStatus = new ConcurrentHashMap<>();
@@ -47,6 +50,23 @@ public class OrderService {
                 return t;
             });
 
+    /**
+     * 校验日期不能早于今天（仅比较日期部分，忽略时分秒）。
+     * @param label 字段中文名，用于错误提示
+     */
+    private void validateDateNotPast(Date date, String label) {
+        if (date == null) return;
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        int day = cal.get(Calendar.DAY_OF_YEAR);
+        int year = cal.get(Calendar.YEAR);
+        Calendar today = Calendar.getInstance();
+        if (year < today.get(Calendar.YEAR)
+                || (year == today.get(Calendar.YEAR) && day < today.get(Calendar.DAY_OF_YEAR))) {
+            throw new BusinessException(400, label + "不能早于今天");
+        }
+    }
+
     /** 创建酒店订单 */
     @Transactional
     public String createHotelOrder(Integer userId, Integer roomId, Integer quantity,
@@ -54,9 +74,10 @@ public class OrderService {
         if (contactName == null || contactName.trim().isEmpty() || contactName.length() > MAX_NAME_LEN) {
             throw new BusinessException(400, "联系人姓名不合法");
         }
-        if (contactPhone == null || !contactPhone.matches("\\d{6,20}")) {
-            throw new BusinessException(400, "联系电话不合法");
+        if (contactPhone == null || !contactPhone.matches(PHONE_REGEX)) {
+            throw new BusinessException(400, "请输入有效的中国大陆手机号");
         }
+        validateDateNotPast(checkInDate, "入住日期");
         HotelRoom room = hotelRoomMapper.selectById(roomId);
         if (room == null || room.getStatus() == 0) {
             throw new BusinessException(400, "房型不可用");
@@ -105,8 +126,17 @@ public class OrderService {
         if (contactName == null || contactName.trim().isEmpty() || contactName.length() > MAX_NAME_LEN) {
             throw new BusinessException(400, "联系人姓名不合法");
         }
-        if (contactPhone == null || !contactPhone.matches("\\d{6,20}")) {
-            throw new BusinessException(400, "联系电话不合法");
+        if (contactPhone == null || !contactPhone.matches(PHONE_REGEX)) {
+            throw new BusinessException(400, "请输入有效的中国大陆手机号");
+        }
+        validateDateNotPast(useDate, "使用日期");
+        // 使用日期不能超过 30 天
+        if (useDate != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DAY_OF_YEAR, MAX_ADVANCE_DAYS);
+            if (useDate.after(cal.getTime())) {
+                throw new BusinessException(400, "使用日期不能超过30天");
+            }
         }
         // 截断时间部分，只保留日期（与DB的DATE类型对齐）
         if (useDate != null) {

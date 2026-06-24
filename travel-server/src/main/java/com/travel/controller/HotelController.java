@@ -60,6 +60,12 @@ public class HotelController {
     @GetMapping("/nearby")
     public ApiResponse<List<Hotel>> nearby(@RequestParam BigDecimal lng,
                                            @RequestParam BigDecimal lat) {
+        if (lng.compareTo(new BigDecimal("-180")) < 0 || lng.compareTo(new BigDecimal("180")) > 0) {
+            throw new com.travel.exception.BusinessException(400, "经度范围-180~180");
+        }
+        if (lat.compareTo(new BigDecimal("-90")) < 0 || lat.compareTo(new BigDecimal("90")) > 0) {
+            throw new com.travel.exception.BusinessException(400, "纬度范围-90~90");
+        }
         return ApiResponse.success(hotelService.nearby(lng, lat));
     }
 }

@@ -7,26 +7,18 @@ const http = axios.create({
   timeout: 15000,
 })
 
-// 请求拦截器 — 自动带 Token + CSRF Token
+// 请求拦截器 — 自动带 Token
 http.interceptors.request.use(config => {
   const token = sessionStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
-  const csrfToken = sessionStorage.getItem('csrfToken')
-  if (csrfToken) {
-    config.headers['X-CSRF-TOKEN'] = csrfToken
-  }
   return config
 })
 
-// 响应拦截器 — 统一错误处理 + 捕获 CSRF Token
+// 响应拦截器 — 统一错误处理
 http.interceptors.response.use(
   response => {
-    const csrfHeader = response.headers['x-csrf-token']
-    if (csrfHeader) {
-      sessionStorage.setItem('csrfToken', csrfHeader)
-    }
     const res = response.data
     if (!res || typeof res !== 'object') {
       return Promise.reject(new Error('Invalid response'))
@@ -34,7 +26,6 @@ http.interceptors.response.use(
     if (Number(res.code) === 401) {
       sessionStorage.removeItem('token')
       sessionStorage.removeItem('user')
-      sessionStorage.removeItem('csrfToken')
       router.push('/login')
       ElMessage.error('请先登录')
       return Promise.reject(new Error(res.message))
@@ -49,7 +40,6 @@ http.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       sessionStorage.removeItem('token')
       sessionStorage.removeItem('user')
-      sessionStorage.removeItem('csrfToken')
       router.push('/login')
       ElMessage.error('登录已过期，请重新登录')
     } else {
@@ -123,7 +113,7 @@ export const fileApi = {
   upload: file => {
     const formData = new FormData()
     formData.append('file', file)
-    return http.post('/file/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return http.post('/file/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 30000 })
   }
 }
 

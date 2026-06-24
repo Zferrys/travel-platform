@@ -13,15 +13,13 @@ import javax.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Secure JWT utility. Reads secret from environment variable JWT_SECRET or
- * system property "jwt.secret". Fails startup if missing.
+ * JWT 工具类。密钥从环境变量 JWT_SECRET 或系统属性 jwt.secret 读取。
+ * 未配置时直接启动失败，避免随机密钥导致重启后所有 Token 静默失效。
  */
 @Component
 public class JwtTokenUtil {
@@ -35,7 +33,6 @@ public class JwtTokenUtil {
 
     @PostConstruct
     public void init() {
-        // 优先从环境变量/系统属性读取密钥
         String prop = System.getProperty("jwt.secret");
         String env = System.getenv("JWT_SECRET");
         secret = (prop != null && !prop.isEmpty()) ? prop
@@ -43,18 +40,13 @@ public class JwtTokenUtil {
                : null;
 
         if (secret == null) {
-            // 未配置时生成随机密钥，避免硬编码默认值被反编译后伪造 Token
-            // 代价：重启后所有已签发 Token 失效（开发环境可接受）
-            byte[] randomBytes = new byte[32]; // 256-bit
-            new SecureRandom().nextBytes(randomBytes);
-            secret = Base64.getEncoder().encodeToString(randomBytes);
-            log.warn("!!! JWT_SECRET 未配置，已生成随机密钥（重启后所有 Token 失效）!!!");
-            log.warn("!!! 生产环境务必设置环境变量 JWT_SECRET 或系统属性 jwt.secret !!!");
-        } else {
-            log.info("JWT 密钥已从环境变量/系统属性加载");
+            throw new IllegalStateException(
+                "JWT_SECRET 未配置！请设置环境变量 JWT_SECRET 或系统属性 jwt.secret。" +
+                "例如: set JWT_SECRET=your-256-bit-secret");
         }
 
         signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        log.info("JWT 密钥已加载");
     }
 
     public String generateToken(Integer userId, String username, Integer userType) {

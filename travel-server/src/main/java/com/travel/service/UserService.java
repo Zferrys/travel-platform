@@ -126,11 +126,13 @@ public class UserService {
         // 5. 验证密码
         if (!passwordUtil.matches(request.getPassword(), user.getPassword())) {
             loginRateLimiter.recordFail(ip, request.getUsername());
+            log.warn("[AUDIT] action=LOGIN_FAIL ip={} username={} reason=PASSWORD_MISMATCH", ip, request.getUsername());
             throw new BusinessException(400, "用户名或密码错误");
         }
 
         // 6. 登录成功，清除失败记录
         loginRateLimiter.clearFail(ip, request.getUsername());
+        log.warn("[AUDIT] action=LOGIN_SUCCESS ip={} username={}", ip, request.getUsername());
 
         // 生成 Token
         String token = jwtTokenUtil.generateToken(user.getUserId(),

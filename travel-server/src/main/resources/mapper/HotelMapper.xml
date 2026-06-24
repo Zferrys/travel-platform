@@ -85,7 +85,6 @@
             <if test="images != null">images = #{images},</if>
             <if test="longitude != null">longitude = #{longitude},</if>
             <if test="latitude != null">latitude = #{latitude},</if>
-            <if test="status != null">status = #{status},</if>
         </set>
         WHERE hotel_id = #{hotelId}
     </update>

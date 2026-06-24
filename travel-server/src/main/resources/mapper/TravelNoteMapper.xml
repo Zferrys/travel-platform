@@ -75,7 +75,6 @@
             <if test="title != null">title = #{title},</if>
             <if test="content != null">content = #{content},</if>
             <if test="coverImage != null">cover_image = #{coverImage},</if>
-            <if test="status != null">status = #{status},</if>
         </set>
         WHERE note_id = #{noteId}
     </update>

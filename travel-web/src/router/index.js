@@ -39,7 +39,6 @@ router.beforeEach((to, from, next) => {
       if (payload.exp && payload.exp * 1000 < Date.now()) {
         sessionStorage.removeItem('token')
         sessionStorage.removeItem('user')
-        sessionStorage.removeItem('csrfToken')
         next({ path: '/login', query: { redirect: to.fullPath } })
         return
       }

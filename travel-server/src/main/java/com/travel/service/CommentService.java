@@ -16,6 +16,10 @@ import java.util.List;
 @Service
 public class CommentService {
 
+    private static final int TARGET_SCENIC = 1;
+    private static final int TARGET_HOTEL = 2;
+    private static final int TARGET_NOTE = 3;
+
     @Autowired
     private CommentMapper commentMapper;
 
@@ -32,16 +36,22 @@ public class CommentService {
     /** 发表评论 */
     @Transactional
     public void publish(Comment comment) {
-        if (comment.getContent() == null || comment.getContent().trim().isEmpty()) {
-            throw new BusinessException(400, "评论内容不能为空");
+        // 校验 targetType 合法性，防止脏数据
+        Integer tt = comment.getTargetType();
+        if (tt == null || (tt != TARGET_SCENIC && tt != TARGET_HOTEL && tt != TARGET_NOTE)) {
+            throw new BusinessException(400, "不支持的评论目标类型");
         }
-        if (comment.getContent().length() > 2000) {
+        String trimmed = comment.getContent() == null ? "" : comment.getContent().trim();
+        if (trimmed.length() < 2) {
+            throw new BusinessException(400, "评论内容至少2个字符");
+        }
+        if (trimmed.length() > 2000) {
             throw new BusinessException(400, "评论内容过长（最多2000字）");
         }
-        comment.setContent(XssFilter.cleanPlainText(comment.getContent()));
+        comment.setContent(XssFilter.cleanPlainText(trimmed));
         commentMapper.insert(comment);
         // 游记评论数+1
-        if (comment.getTargetType() == 3) {
+        if (tt == TARGET_NOTE) {
             travelNoteMapper.updateCommentCount(comment.getTargetId(), 1);
         }
     }
@@ -55,7 +65,7 @@ public class CommentService {
         int rows = commentMapper.deleteById(commentId, userId);
         if (rows == 0) throw new BusinessException(400, "删除失败");
         // 游记评论数-1
-        if (comment.getTargetType() == 3) {
+        if (comment.getTargetType() == TARGET_NOTE) {
             travelNoteMapper.updateCommentCount(comment.getTargetId(), -1);
         }
     }
