@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.travel.mapper.HotelMapper">
+    <resultMap id="BaseResultMap" type="com.travel.entity.Hotel">
+        <id column="hotel_id" property="hotelId"/>
+        <result column="hotel_name" property="hotelName"/>
+        <result column="city" property="city"/>
+        <result column="address" property="address"/>
+        <result column="star_level" property="starLevel"/>
+        <result column="phone" property="phone"/>
+        <result column="description" property="description"/>
+        <result column="facilities" property="facilities"/>
+        <result column="images" property="images"/>
+        <result column="longitude" property="longitude"/>
+        <result column="latitude" property="latitude"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="BaseColumns">
+        hotel_id, hotel_name, city, address, star_level, phone,
+        description, facilities, images, longitude, latitude, status, create_time
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_hotel WHERE hotel_id = #{hotelId}
+    </select>
+
+    <select id="selectByCity" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_hotel WHERE status = 1
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        ORDER BY star_level DESC
+    </select>
+
+    <select id="selectByConditionPage" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_hotel WHERE status = 1
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        <if test="keyword != null and keyword != ''">
+            AND (hotel_name LIKE CONCAT('%',#{keyword},'%') OR address LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="minStar != null">AND star_level >= #{minStar}</if>
+        <if test="maxStar != null">AND star_level &lt;= #{maxStar}</if>
+        ORDER BY star_level DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM t_hotel WHERE status = 1
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        <if test="keyword != null and keyword != ''">
+            AND (hotel_name LIKE CONCAT('%',#{keyword},'%') OR address LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="minStar != null">AND star_level >= #{minStar}</if>
+        <if test="maxStar != null">AND star_level &lt;= #{maxStar}</if>
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_hotel WHERE status = 1
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        <if test="keyword != null and keyword != ''">
+            AND (hotel_name LIKE CONCAT('%',#{keyword},'%') OR address LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="minStar != null">AND star_level >= #{minStar}</if>
+        <if test="maxStar != null">AND star_level &lt;= #{maxStar}</if>
+        ORDER BY star_level DESC
+    </select>
+
+    <insert id="insert" parameterType="com.travel.entity.Hotel" useGeneratedKeys="true" keyProperty="hotelId">
+        INSERT INTO t_hotel (hotel_name, city, address, star_level, phone,
+            description, facilities, images, longitude, latitude)
+        VALUES (#{hotelName}, #{city}, #{address}, #{starLevel}, #{phone},
+            #{description}, #{facilities}, #{images}, #{longitude}, #{latitude})
+    </insert>
+
+    <update id="updateById" parameterType="com.travel.entity.Hotel">
+        UPDATE t_hotel
+        <set>
+            <if test="hotelName != null">hotel_name = #{hotelName},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="starLevel != null">star_level = #{starLevel},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="facilities != null">facilities = #{facilities},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE hotel_id = #{hotelId}
+    </update>
+
+    <select id="selectNearby" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_hotel
+        WHERE status = 1
+          AND longitude BETWEEN #{minLng} AND #{maxLng}
+          AND latitude BETWEEN #{minLat} AND #{maxLat}
+        ORDER BY star_level DESC
+    </select>
+</mapper>

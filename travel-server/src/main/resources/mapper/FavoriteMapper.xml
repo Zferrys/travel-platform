@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.travel.mapper.FavoriteMapper">
+    <resultMap id="BaseResultMap" type="com.travel.entity.Favorite">
+        <id column="favorite_id" property="favoriteId"/>
+        <result column="user_id" property="userId"/>
+        <result column="target_type" property="targetType"/>
+        <result column="target_id" property="targetId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="target_name" property="targetName"/>
+        <result column="target_cover" property="targetCover"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="favoriteId">
+        INSERT INTO t_favorite (user_id, target_type, target_id) VALUES (#{userId}, #{targetType}, #{targetId})
+    </insert>
+
+    <insert id="insertIgnore">
+        INSERT IGNORE INTO t_favorite (user_id, target_type, target_id) VALUES (#{userId}, #{targetType}, #{targetId})
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM t_favorite WHERE user_id = #{userId} AND target_type = #{targetType} AND target_id = #{targetId}
+    </delete>
+
+    <select id="exists" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_favorite
+        WHERE user_id = #{userId} AND target_type = #{targetType} AND target_id = #{targetId}
+    </select>
+
+    <select id="selectByUserAndType" resultType="int">
+        SELECT target_id FROM t_favorite WHERE user_id = #{userId} AND target_type = #{targetType}
+        ORDER BY create_time DESC LIMIT 20
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT f.*,
+            CASE f.target_type
+                WHEN 1 THEN s.scenic_name
+                WHEN 2 THEN h.hotel_name
+                WHEN 3 THEN n.title
+            END AS target_name,
+            CASE f.target_type
+                WHEN 1 THEN s.cover_image
+                WHEN 2 THEN JSON_UNQUOTE(JSON_EXTRACT(h.images, '$[0]'))
+                WHEN 3 THEN n.cover_image
+            END AS target_cover
+        FROM t_favorite f
+        LEFT JOIN t_scenic s ON f.target_type = 1 AND f.target_id = s.scenic_id
+        LEFT JOIN t_hotel h ON f.target_type = 2 AND f.target_id = h.hotel_id
+        LEFT JOIN t_travel_note n ON f.target_type = 3 AND f.target_id = n.note_id
+        WHERE f.user_id = #{userId}
+        <if test="targetType != null">AND f.target_type = #{targetType}</if>
+        ORDER BY f.create_time DESC
+    </select>
+</mapper>

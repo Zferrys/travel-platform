@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.travel.mapper.TicketInventoryMapper">
+    <resultMap id="BaseResultMap" type="com.travel.entity.TicketInventory">
+        <id column="inventory_id" property="inventoryId"/>
+        <result column="scenic_id" property="scenicId"/>
+        <result column="use_date" property="useDate"/>
+        <result column="total_stock" property="totalStock"/>
+        <result column="available_stock" property="availableStock"/>
+        <result column="version" property="version"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <select id="selectForUpdate" resultMap="BaseResultMap">
+        SELECT * FROM t_ticket_inventory
+        WHERE scenic_id = #{scenicId} AND use_date = DATE(#{useDate}) FOR UPDATE
+    </select>
+
+    <update id="decreaseStockWithVersion">
+        UPDATE t_ticket_inventory
+        SET available_stock = available_stock - 1, version = version + 1, update_time = NOW()
+        WHERE scenic_id = #{scenicId} AND use_date = DATE(#{useDate})
+          AND available_stock > 0 AND version = #{version}
+    </update>
+
+    <update id="restoreStock">
+        UPDATE t_ticket_inventory
+        SET available_stock = available_stock + 1, version = version + 1, update_time = NOW()
+        WHERE scenic_id = #{scenicId} AND use_date = DATE(#{useDate})
+          AND version = #{version}
+    </update>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="inventoryId">
+        INSERT INTO t_ticket_inventory (scenic_id, use_date, total_stock, available_stock)
+        VALUES (#{scenicId}, #{useDate}, #{totalStock}, #{availableStock})
+    </insert>
+</mapper>

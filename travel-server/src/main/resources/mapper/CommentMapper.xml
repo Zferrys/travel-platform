@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.travel.mapper.CommentMapper">
+    <resultMap id="BaseResultMap" type="com.travel.entity.Comment">
+        <id column="comment_id" property="commentId"/>
+        <result column="user_id" property="userId"/>
+        <result column="target_type" property="targetType"/>
+        <result column="target_id" property="targetId"/>
+        <result column="content" property="content"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="username" property="username"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatar" property="avatar"/>
+    </resultMap>
+
+    <select id="selectByTarget" resultMap="BaseResultMap">
+        SELECT c.*, u.username, u.nickname, u.avatar
+        FROM t_comment c LEFT JOIN t_user u ON c.user_id = u.user_id
+        WHERE c.target_type = #{targetType} AND c.target_id = #{targetId} AND c.status = 1
+        ORDER BY c.create_time ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="commentId">
+        INSERT INTO t_comment (user_id, target_type, target_id, content, parent_id)
+        VALUES (#{userId}, #{targetType}, #{targetId}, #{content}, #{parentId})
+    </insert>
+
+    <update id="deleteById">
+        UPDATE t_comment SET status = 0 WHERE comment_id = #{commentId} AND user_id = #{userId}
+    </update>
+
+    <select id="countByTarget" resultType="long">
+        SELECT COUNT(*) FROM t_comment
+        WHERE target_type = #{targetType} AND target_id = #{targetId} AND status = 1
+    </select>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT c.*, u.username, u.nickname, u.avatar
+        FROM t_comment c LEFT JOIN t_user u ON c.user_id = u.user_id
+        WHERE c.comment_id = #{commentId}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT c.*, u.username, u.nickname, u.avatar
+        FROM t_comment c LEFT JOIN t_user u ON c.user_id = u.user_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND c.content LIKE CONCAT('%',#{keyword},'%')
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM t_comment
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (content LIKE CONCAT('%',#{keyword},'%'))
+            </if>
+        </where>
+    </select>
+
+    <update id="forceDelete">
+        UPDATE t_comment SET status = 0 WHERE comment_id = #{commentId}
+    </update>
+</mapper>

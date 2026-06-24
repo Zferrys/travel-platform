@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <!-- ========== 扫描 Controller 和 Web 配置 ========== -->
+    <context:component-scan base-package="com.travel.controller"/>
+    <context:component-scan base-package="com.travel.config"/>
+
+    <!-- ========== 开启 MVC 注解驱动（自定义 Jackson 日期格式） ========== -->
+    <mvc:annotation-driven>
+        <mvc:message-converters>
+            <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+                <property name="objectMapper">
+                    <bean class="com.fasterxml.jackson.databind.ObjectMapper">
+                        <property name="dateFormat">
+                            <bean class="java.text.SimpleDateFormat">
+                                <constructor-arg type="java.lang.String" value="yyyy-MM-dd HH:mm:ss"/>
+                            </bean>
+                        </property>
+                    </bean>
+                </property>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+
+    <!-- ========== 静态资源处理 ========== -->
+    <mvc:default-servlet-handler/>
+
+    <!-- ========== 文件上传解析器 ========== -->
+    <bean id="multipartResolver"
+          class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" value="10485760"/>
+        <property name="defaultEncoding" value="UTF-8"/>
+    </bean>
+
+    <!-- ========== 拦截器配置 ========== -->
+    <mvc:interceptors>
+        <!-- 认证拦截器 -->
+        <mvc:interceptor>
+            <mvc:mapping path="/api/**"/>
+            <mvc:exclude-mapping path="/api/user/login"/>
+            <mvc:exclude-mapping path="/api/user/register"/>
+            <mvc:exclude-mapping path="/api/captcha/**"/>
+            <mvc:exclude-mapping path="/api/scenic/**"/>
+            <mvc:exclude-mapping path="/api/hotel/**"/>
+            <mvc:exclude-mapping path="/api/travel-note/list"/>
+            <mvc:exclude-mapping path="/api/travel-note/detail/**"/>
+            <mvc:exclude-mapping path="/api/comment/list/**"/>
+            <mvc:exclude-mapping path="/api/monitor/**"/>
+            <bean class="com.travel.interceptor.AuthInterceptor"/>
+        </mvc:interceptor>
+
+        <!-- 限流拦截器（针对抢购接口） -->
+        <mvc:interceptor>
+            <mvc:mapping path="/api/order/seckill"/>
+            <bean class="com.travel.interceptor.RateLimitInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+    <!-- ========== 统一异常处理 ========== -->
+    <bean class="com.travel.handler.GlobalExceptionHandler"/>
+</beans>

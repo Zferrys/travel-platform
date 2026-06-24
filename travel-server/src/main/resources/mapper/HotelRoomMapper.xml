@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.travel.mapper.HotelRoomMapper">
+    <resultMap id="BaseResultMap" type="com.travel.entity.HotelRoom">
+        <id column="room_id" property="roomId"/>
+        <result column="hotel_id" property="hotelId"/>
+        <result column="room_type" property="roomType"/>
+        <result column="bed_type" property="bedType"/>
+        <result column="facilities" property="facilities"/>
+        <result column="price" property="price"/>
+        <result column="stock" property="stock"/>
+        <result column="status" property="status"/>
+    </resultMap>
+
+    <select id="selectByHotelId" resultMap="BaseResultMap">
+        SELECT room_id, hotel_id, room_type, bed_type, facilities, price, stock, status
+        FROM t_hotel_room WHERE hotel_id = #{hotelId} AND status = 1
+    </select>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT room_id, hotel_id, room_type, bed_type, facilities, price, stock, status
+        FROM t_hotel_room WHERE room_id = #{roomId}
+    </select>
+
+    <update id="decreaseStock">
+        UPDATE t_hotel_room SET stock = stock - #{quantity}
+        WHERE room_id = #{roomId} AND stock >= #{quantity}
+    </update>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="roomId">
+        INSERT INTO t_hotel_room (hotel_id, room_type, bed_type, facilities, price, stock)
+        VALUES (#{hotelId}, #{roomType}, #{bedType}, #{facilities}, #{price}, #{stock})
+    </insert>
+
+    <update id="updateById" parameterType="com.travel.entity.HotelRoom">
+        UPDATE t_hotel_room
+        <set>
+            <if test="roomType != null">room_type = #{roomType},</if>
+            <if test="bedType != null">bed_type = #{bedType},</if>
+            <if test="facilities != null">facilities = #{facilities},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="stock != null">stock = #{stock},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE room_id = #{roomId}
+    </update>
+</mapper>

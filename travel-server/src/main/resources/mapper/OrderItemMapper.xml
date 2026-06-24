@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.travel.mapper.OrderItemMapper">
+    <resultMap id="BaseResultMap" type="com.travel.entity.OrderItem">
+        <id column="item_id" property="itemId"/>
+        <result column="order_id" property="orderId"/>
+        <result column="product_type" property="productType"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="quantity" property="quantity"/>
+        <result column="price" property="price"/>
+        <result column="use_date" property="useDate"/>
+        <result column="refund_status" property="refundStatus"/>
+    </resultMap>
+
+    <select id="selectByOrderId" resultMap="BaseResultMap">
+        SELECT * FROM t_order_item WHERE order_id = #{orderId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="itemId">
+        INSERT INTO t_order_item (order_id, product_type, product_id, product_name, quantity, price, use_date)
+        VALUES (#{orderId}, #{productType}, #{productId}, #{productName}, #{quantity}, #{price}, #{useDate})
+    </insert>
+
+    <update id="updateRefundStatus">
+        UPDATE t_order_item SET refund_status = #{refundStatus} WHERE item_id = #{itemId}
+    </update>
+</mapper>

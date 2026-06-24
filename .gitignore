@@ -1,0 +1,20 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Test screenshots
+*.png
+*.jpg
+*.jpeg
+
+# Playwright
+.playwright-mcp/
+
+# Claude
+.claude/

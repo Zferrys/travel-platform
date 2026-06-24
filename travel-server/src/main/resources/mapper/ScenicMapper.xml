@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.travel.mapper.ScenicMapper">
+    <resultMap id="BaseResultMap" type="com.travel.entity.Scenic">
+        <id column="scenic_id" property="scenicId"/>
+        <result column="scenic_name" property="scenicName"/>
+        <result column="city" property="city"/>
+        <result column="address" property="address"/>
+        <result column="longitude" property="longitude"/>
+        <result column="latitude" property="latitude"/>
+        <result column="description" property="description"/>
+        <result column="open_time" property="openTime"/>
+        <result column="ticket_price" property="ticketPrice"/>
+        <result column="recommend_level" property="recommendLevel"/>
+        <result column="cover_image" property="coverImage"/>
+        <result column="images" property="images"/>
+        <result column="tags" property="tags"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="BaseColumns">
+        scenic_id, scenic_name, city, address, longitude, latitude, description,
+        open_time, ticket_price, recommend_level, cover_image, images, tags,
+        view_count, status, create_time
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_scenic WHERE scenic_id = #{scenicId}
+    </select>
+
+    <select id="selectByCity" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_scenic
+        WHERE status = 1
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        ORDER BY recommend_level DESC, view_count DESC
+    </select>
+
+    <select id="selectHotScenics" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_scenic
+        WHERE status = 1
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        ORDER BY recommend_level DESC, view_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByTags" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_scenic WHERE status = 1
+        <if test="tags != null and tags.size() > 0">
+            AND (
+            <foreach collection="tags" item="tag" separator="OR">tags LIKE CONCAT('%',#{tag},'%')</foreach>
+            )
+        </if>
+        ORDER BY recommend_level DESC LIMIT #{limit}
+    </select>
+
+    <select id="selectByConditionPage" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_scenic WHERE status = 1
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        <if test="keyword != null and keyword != ''">
+            AND (scenic_name LIKE CONCAT('%',#{keyword},'%') OR description LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="tags != null and tags != ''">AND tags LIKE CONCAT('%',#{tags},'%')</if>
+        <if test="minLevel != null">AND recommend_level >= #{minLevel}</if>
+        ORDER BY recommend_level DESC, view_count DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM t_scenic WHERE status = 1
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        <if test="keyword != null and keyword != ''">
+            AND (scenic_name LIKE CONCAT('%',#{keyword},'%') OR description LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="tags != null and tags != ''">AND tags LIKE CONCAT('%',#{tags},'%')</if>
+        <if test="minLevel != null">AND recommend_level >= #{minLevel}</if>
+    </select>
+
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_scenic WHERE status = 1
+        <if test="city != null and city != ''">AND city = #{city}</if>
+        <if test="keyword != null and keyword != ''">
+            AND (scenic_name LIKE CONCAT('%',#{keyword},'%') OR description LIKE CONCAT('%',#{keyword},'%'))
+        </if>
+        <if test="tags != null and tags != ''">AND tags LIKE CONCAT('%',#{tags},'%')</if>
+        <if test="minLevel != null">AND recommend_level >= #{minLevel}</if>
+        ORDER BY recommend_level DESC, view_count DESC
+    </select>
+
+    <select id="selectNearby" resultMap="BaseResultMap">
+        SELECT <include refid="BaseColumns"/> FROM t_scenic WHERE status = 1
+        AND longitude BETWEEN #{minLng} AND #{maxLng}
+        AND latitude BETWEEN #{minLat} AND #{maxLat}
+        ORDER BY recommend_level DESC LIMIT #{limit}
+    </select>
+
+    <update id="updateViewCount">
+        UPDATE t_scenic SET view_count = view_count + 1 WHERE scenic_id = #{scenicId}
+    </update>
+
+    <insert id="insert" parameterType="com.travel.entity.Scenic" useGeneratedKeys="true" keyProperty="scenicId">
+        INSERT INTO t_scenic (scenic_name, city, address, longitude, latitude,
+            description, open_time, ticket_price, recommend_level, cover_image, images, tags)
+        VALUES (#{scenicName}, #{city}, #{address}, #{longitude}, #{latitude},
+            #{description}, #{openTime}, #{ticketPrice}, #{recommendLevel}, #{coverImage}, #{images}, #{tags})
+    </insert>
+
+    <update id="updateById" parameterType="com.travel.entity.Scenic">
+        UPDATE t_scenic
+        <set>
+            <if test="scenicName != null">scenic_name = #{scenicName},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="openTime != null">open_time = #{openTime},</if>
+            <if test="ticketPrice != null">ticket_price = #{ticketPrice},</if>
+            <if test="recommendLevel != null">recommend_level = #{recommendLevel},</if>
+            <if test="coverImage != null">cover_image = #{coverImage},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE scenic_id = #{scenicId}
+    </update>
+
+    <delete id="deleteById">
+        UPDATE t_scenic SET status = 0 WHERE scenic_id = #{scenicId}
+    </delete>
+</mapper>
