@@ -217,7 +217,7 @@ public class OrderService {
         List<OrderItem> items = orderItemMapper.selectByOrderId(orderId);
         for (OrderItem item : items) {
             if (item.getProductType() == 1 && item.getQuantity() != null) {
-                hotelRoomMapper.decreaseStock(item.getProductId(), -item.getQuantity());
+                hotelRoomMapper.increaseStock(item.getProductId(), item.getQuantity());
             } else if (item.getProductType() == 2) {
                 TicketInventory inv = ticketInventoryMapper.selectForUpdate(item.getProductId(), item.getUseDate());
                 if (inv != null) {

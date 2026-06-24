@@ -21,7 +21,7 @@ public class XssFilter {
             .addAttributes("div", "style")
             .addAttributes("table", "border", "cellpadding", "cellspacing")
             .addAttributes(":all", "class")
-            .addProtocols("img", "src", "http", "https", "data")
+            .addProtocols("img", "src", "http", "https")
             .addProtocols("a", "href", "http", "https", "mailto");
 
     /** 纯文本（评论等），剥离所有 HTML */

@@ -22,8 +22,11 @@ public interface UserMapper {
     /** 插入用户 */
     int insert(User user);
 
-    /** 更新用户信息 */
+    /** 更新用户信息（管理员用，可修改所有字段） */
     int updateById(User user);
+
+    /** 更新用户个人资料（仅安全字段：昵称、手机号、邮箱、头像、性别、生日） */
+    int updateUserProfile(User user);
 
     /** 检查用户名是否存在 */
     int countByUsername(@Param("username") String username);

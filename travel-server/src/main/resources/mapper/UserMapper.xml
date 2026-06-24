@@ -54,7 +54,7 @@
                 #{gender}, #{birthday}, 1, 1)
     </insert>
 
-    <!-- 更新用户信息 -->
+    <!-- 更新用户信息（管理员用，包含 status/userType） -->
     <update id="updateById" parameterType="com.travel.entity.User">
         UPDATE t_user
         <set>
@@ -67,6 +67,21 @@
             <if test="birthday != null">birthday = #{birthday},</if>
             <if test="status != null">status = #{status},</if>
             <if test="userType != null">user_type = #{userType},</if>
+        </set>
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新用户个人资料（仅安全字段，防止越权修改 status/userType） -->
+    <update id="updateUserProfile" parameterType="com.travel.entity.User">
+        UPDATE t_user
+        <set>
+            update_time = NOW(),
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="birthday != null">birthday = #{birthday},</if>
         </set>
         WHERE user_id = #{userId}
     </update>

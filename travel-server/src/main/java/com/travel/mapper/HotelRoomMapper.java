@@ -9,6 +9,8 @@ public interface HotelRoomMapper {
     List<HotelRoom> selectByHotelId(@Param("hotelId") Integer hotelId);
     HotelRoom selectById(@Param("roomId") Integer roomId);
     int decreaseStock(@Param("roomId") Integer roomId, @Param("quantity") int quantity);
+    /** 恢复库存（取消订单/退款时使用） */
+    int increaseStock(@Param("roomId") Integer roomId, @Param("quantity") int quantity);
     int insert(HotelRoom room);
     int updateById(HotelRoom room);
 }

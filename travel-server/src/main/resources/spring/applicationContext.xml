@@ -19,8 +19,9 @@
                                 expression="org.springframework.stereotype.Controller"/>
     </context:component-scan>
 
-    <!-- ========== 加载属性配置文件 ========== -->
-    <context:property-placeholder location="classpath:jdbc.properties,classpath:redis.properties"/>
+    <!-- ========== 加载属性配置文件（系统属性可覆盖文件中的值） ========== -->
+    <context:property-placeholder location="classpath:jdbc.properties,classpath:redis.properties"
+                                  system-properties-mode="OVERRIDE"/>
 
     <!-- ========== Druid 数据源 ========== -->
     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
@@ -79,12 +80,13 @@
         <property name="testOnBorrow" value="${redis.testOnBorrow}"/>
     </bean>
 
-    <!-- 本地 Redis 无密码，不传 password 参数，避免 AUTH 报错 -->
+    <!-- Redis 连接池（支持密码认证，本地开发密码为空时不触发 AUTH） -->
     <bean id="jedisPool" class="redis.clients.jedis.JedisPool">
         <constructor-arg name="poolConfig" ref="jedisPoolConfig"/>
         <constructor-arg name="host" value="${redis.host}"/>
         <constructor-arg name="port" value="${redis.port}"/>
         <constructor-arg name="timeout" value="${redis.timeout}"/>
+        <constructor-arg name="password" value="${redis.password}"/>
     </bean>
 
     <!-- ========== BCrypt 密码编码器 ========== -->

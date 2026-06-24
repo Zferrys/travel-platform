@@ -54,8 +54,12 @@ public class UserService {
         if (!StringUtils.hasText(request.getUsername()) || request.getUsername().length() < 3) {
             throw new BusinessException(400, "用户名至少3个字符");
         }
-        if (!StringUtils.hasText(request.getPassword()) || request.getPassword().length() < 6) {
-            throw new BusinessException(400, "密码至少6个字符");
+        if (!StringUtils.hasText(request.getPassword()) || request.getPassword().length() < 8) {
+            throw new BusinessException(400, "密码至少8个字符");
+        }
+        // 密码复杂度校验：至少包含字母和数字
+        if (!request.getPassword().matches(".*[a-zA-Z].*") || !request.getPassword().matches(".*\\d.*")) {
+            throw new BusinessException(400, "密码需包含字母和数字");
         }
 
         // 用户名唯一性检查
@@ -76,7 +80,7 @@ public class UserService {
         user.setPassword(passwordUtil.encode(request.getPassword()));
         String cleanNick = XssFilter.cleanPlainText(request.getNickname());
         user.setNickname(StringUtils.hasText(cleanNick) ? cleanNick : user.getUsername());
-        user.setPhone(request.getPhone());
+        user.setPhone(XssFilter.cleanPlainText(request.getPhone()));
         user.setAvatar("/images/default-avatar.svg");
         user.setGender(0);
 
@@ -151,7 +155,7 @@ public class UserService {
     }
 
     /**
-     * 更新用户信息
+     * 更新用户个人资料（仅允许修改安全字段，防止越权提升 userType/status）
      */
     @Transactional
     public void updateUserInfo(Integer userId, User updateData) {
@@ -159,8 +163,30 @@ public class UserService {
         if (user == null) {
             throw new BusinessException(404, "用户不存在");
         }
-        updateData.setUserId(userId);
-        userMapper.updateById(updateData);
+
+        // 白名单：只允许更新以下安全字段，忽略 userType、status 等敏感字段
+        User safeUpdate = new User();
+        safeUpdate.setUserId(userId);
+        if (updateData.getNickname() != null) {
+            safeUpdate.setNickname(XssFilter.cleanPlainText(updateData.getNickname()));
+        }
+        if (updateData.getPhone() != null) {
+            safeUpdate.setPhone(XssFilter.cleanPlainText(updateData.getPhone()));
+        }
+        if (updateData.getEmail() != null) {
+            safeUpdate.setEmail(XssFilter.cleanPlainText(updateData.getEmail()));
+        }
+        if (updateData.getAvatar() != null) {
+            safeUpdate.setAvatar(updateData.getAvatar());
+        }
+        if (updateData.getGender() != null) {
+            safeUpdate.setGender(updateData.getGender());
+        }
+        if (updateData.getBirthday() != null) {
+            safeUpdate.setBirthday(updateData.getBirthday());
+        }
+
+        userMapper.updateUserProfile(safeUpdate);
     }
 
     /**

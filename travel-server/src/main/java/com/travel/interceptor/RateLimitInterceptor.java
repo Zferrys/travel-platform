@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 限流拦截器 — 基于令牌桶算法（简化版）
@@ -68,25 +69,30 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         String ip = getClientIp(request);
         long currentTime = System.currentTimeMillis();
 
-        // 检查并更新时间窗口
-        Long resetTime = ipResetTimes.get(ip);
-        if (resetTime == null || currentTime > resetTime) {
-            ipRequestCounts.put(ip, 1L);
-            ipResetTimes.put(ip, currentTime + TIME_WINDOW);
-            return true;
-        }
+        // 单次 compute() 原子地完成：窗口重置 + 计数递增 + 超限检查
+        AtomicBoolean exceeded = new AtomicBoolean(false);
+        ipRequestCounts.compute(ip, (k, count) -> {
+            Long resetTime = ipResetTimes.get(ip);
+            if (resetTime == null || currentTime > resetTime) {
+                // 窗口过期 → 重置计数为 1，更新时间窗口
+                ipResetTimes.put(ip, currentTime + TIME_WINDOW);
+                return 1L;
+            }
+            long next = (count == null) ? 1L : count + 1;
+            if (next > MAX_REQUESTS) {
+                exceeded.set(true);
+            }
+            return next;
+        });
 
-        // 检查请求次数
-        long count = ipRequestCounts.getOrDefault(ip, 0L);
-        if (count >= MAX_REQUESTS) {
+        if (exceeded.get()) {
             response.setStatus(429);
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write("{\"code\":429,\"message\":\"请求过于频繁，请稍后再试\"}");
-            log.warn("IP: {} 触发限流，{}秒内请求{}次", ip, TIME_WINDOW / 1000, count);
+            log.warn("IP: {} 触发限流，{}秒内请求超过{}次", ip, TIME_WINDOW / 1000, MAX_REQUESTS);
             return false;
         }
 
-        ipRequestCounts.put(ip, count + 1);
         return true;
     }
 

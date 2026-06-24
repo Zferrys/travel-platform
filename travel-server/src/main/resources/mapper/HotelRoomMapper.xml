@@ -27,6 +27,11 @@
         WHERE room_id = #{roomId} AND stock >= #{quantity}
     </update>
 
+    <update id="increaseStock">
+        UPDATE t_hotel_room SET stock = stock + #{quantity}
+        WHERE room_id = #{roomId}
+    </update>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="roomId">
         INSERT INTO t_hotel_room (hotel_id, room_type, bed_type, facilities, price, stock)
         VALUES (#{hotelId}, #{roomType}, #{bedType}, #{facilities}, #{price}, #{stock})
