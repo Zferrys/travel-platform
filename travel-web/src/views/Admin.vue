@@ -319,7 +319,7 @@
     <el-dialog v-model="createUserDialog" title="创建用户" width="420px" :close-on-click-modal="false">
       <el-form :model="newUser" label-position="top">
         <el-form-item label="用户名"><el-input v-model="newUser.username" placeholder="至少3个字符" /></el-form-item>
-        <el-form-item label="密码"><el-input v-model="newUser.password" type="password" placeholder="至少6个字符" show-password /></el-form-item>
+        <el-form-item label="密码"><el-input v-model="newUser.password" type="password" placeholder="至少8位，含字母和数字" show-password /></el-form-item>
         <el-form-item label="昵称"><el-input v-model="newUser.nickname" placeholder="可选" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="newUser.phone" placeholder="可选" /></el-form-item>
       </el-form>

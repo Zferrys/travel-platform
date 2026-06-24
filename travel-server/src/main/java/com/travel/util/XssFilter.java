@@ -17,8 +17,6 @@ public class XssFilter {
             .addAttributes("img", "src", "alt", "title", "width", "height")
             .addAttributes("video", "src", "controls", "width", "height")
             .addAttributes("font", "size", "color")
-            .addAttributes("span", "style")
-            .addAttributes("div", "style")
             .addAttributes("table", "border", "cellpadding", "cellspacing")
             .addAttributes(":all", "class")
             .addProtocols("img", "src", "http", "https")

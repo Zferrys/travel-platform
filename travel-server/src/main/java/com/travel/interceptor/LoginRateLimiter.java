@@ -12,6 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 登录限流器
@@ -67,9 +69,10 @@ public class LoginRateLimiter {
         while (it.hasNext()) {
             Map.Entry<String, FailRecord> entry = it.next();
             FailRecord r = entry.getValue();
-            if (r.lockUntil > 0 && now > r.lockUntil + keepTime) {
+            long lu = r.lockUntil.get();
+            if (lu > 0 && now > lu + keepTime) {
                 it.remove();
-            } else if (r.lockUntil == 0 && now > r.firstFailTime + keepTime) {
+            } else if (lu == 0 && now > r.firstFailTime + keepTime) {
                 it.remove();
             }
         }
@@ -83,7 +86,7 @@ public class LoginRateLimiter {
         // 检查 IP
         FailRecord ipRecord = ipRecords.get(ip);
         if (ipRecord != null && ipRecord.isLocked(IP_MAX_FAILS, IP_LOCK_TIME)) {
-            long remaining = (ipRecord.lockUntil - System.currentTimeMillis()) / 1000 / 60;
+            long remaining = (ipRecord.lockUntil.get() - System.currentTimeMillis()) / 1000 / 60;
             log.warn("IP {} 被锁定，剩余 {} 分钟", maskIp(ip), remaining);
             return "登录失败次数过多，请" + (remaining > 0 ? remaining + "分钟" : "稍") + "后再试";
         }
@@ -91,7 +94,7 @@ public class LoginRateLimiter {
         // 检查用户名
         FailRecord userRecord = userRecords.get(username);
         if (userRecord != null && userRecord.isLocked(USER_MAX_FAILS, USER_LOCK_TIME)) {
-            long remaining = (userRecord.lockUntil - System.currentTimeMillis()) / 1000 / 60;
+            long remaining = (userRecord.lockUntil.get() - System.currentTimeMillis()) / 1000 / 60;
             log.warn("用户 {} 被锁定，剩余 {} 分钟", username, remaining);
             return "该账号登录失败次数过多，请" + (remaining > 0 ? remaining + "分钟" : "稍") + "后再试";
         }
@@ -147,24 +150,37 @@ public class LoginRateLimiter {
         return lastDot > 0 ? ip.substring(0, lastDot) + ".*" : ip;
     }
 
-    /** 失败记录内部类 */
+    /** 失败记录内部类（线程安全） */
     private static class FailRecord {
-        int count;
-        long lockUntil;
-        long firstFailTime = System.currentTimeMillis();
+        final AtomicInteger count = new AtomicInteger(0);
+        final AtomicLong lockUntil = new AtomicLong(0);
+        final long firstFailTime = System.currentTimeMillis();
 
         void fail() {
-            count++;
+            count.incrementAndGet();
         }
 
+        /**
+         * 检查是否应锁定。使用 CAS 保证只有一个线程能设置锁定时间。
+         * @return true 表示已锁定
+         */
         boolean isLocked(int maxFails, long lockTime) {
-            if (lockUntil > 0 && System.currentTimeMillis() < lockUntil) {
+            long currentLock = lockUntil.get();
+            // 已在锁定期内
+            if (currentLock > 0 && System.currentTimeMillis() < currentLock) {
                 return true;
             }
-            if (count >= maxFails && lockUntil == 0) {
-                lockUntil = System.currentTimeMillis() + lockTime;
-                count = 0;
-                return true;
+            // 失败次数达标且未锁定，尝试获取锁
+            if (count.get() >= maxFails && currentLock == 0) {
+                long newLock = System.currentTimeMillis() + lockTime;
+                if (lockUntil.compareAndSet(0, newLock)) {
+                    // 当前线程成功设置锁定
+                    count.set(0);
+                    return true;
+                }
+                // 其他线程已抢先锁定，重新检查
+                long afterLock = lockUntil.get();
+                return afterLock > 0 && System.currentTimeMillis() < afterLock;
             }
             return false;
         }

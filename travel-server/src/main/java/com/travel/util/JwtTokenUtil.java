@@ -48,8 +48,8 @@ public class JwtTokenUtil {
             byte[] randomBytes = new byte[32]; // 256-bit
             new SecureRandom().nextBytes(randomBytes);
             secret = Base64.getEncoder().encodeToString(randomBytes);
-            log.error("!!! JWT_SECRET 未配置，已生成随机密钥（重启后所有 Token 失效）!!!");
-            log.error("!!! 生产环境务必设置环境变量 JWT_SECRET 或系统属性 jwt.secret !!!");
+            log.warn("!!! JWT_SECRET 未配置，已生成随机密钥（重启后所有 Token 失效）!!!");
+            log.warn("!!! 生产环境务必设置环境变量 JWT_SECRET 或系统属性 jwt.secret !!!");
         } else {
             log.info("JWT 密钥已从环境变量/系统属性加载");
         }

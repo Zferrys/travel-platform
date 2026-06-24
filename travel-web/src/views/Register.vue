@@ -17,7 +17,7 @@
           <el-input v-model="form.username" placeholder="用户名（至少3位）" size="large" :prefix-icon="User" />
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="form.password" type="password" placeholder="密码（至少6位）" size="large" show-password :prefix-icon="Lock" />
+          <el-input v-model="form.password" type="password" placeholder="密码（至少8位，含字母和数字）" size="large" show-password :prefix-icon="Lock" />
         </el-form-item>
         <el-form-item prop="nickname">
           <el-input v-model="form.nickname" placeholder="昵称（选填，用于展示）" size="large" :prefix-icon="UserFilled" />
@@ -50,7 +50,11 @@ const loading = ref(false)
 const form = reactive({ username: '', password: '', nickname: '', phone: '' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }, { min: 3, message: '至少3个字符', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, message: '至少6个字符', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 8, message: '至少8个字符', trigger: 'blur' },
+    { pattern: /^(?=.*[a-zA-Z])(?=.*\d)/, message: '密码需包含字母和数字', trigger: 'blur' },
+  ],
 }
 
 const handleRegister = async () => {
